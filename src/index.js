@@ -1,18 +1,54 @@
 import P from 'bluebird'
 import kbpgp from 'kbpgp'
 
-const importFromArmoredPgp = P.promisify(kbpgp.KeyManager.import_from_armored_pgp)
-const box = P.promisify(kbpgp.box)
+const F = kbpgp['const'].openpgp
 
-module.exports = async function encrypt (publicKey, message) {
+const keyManagerGenerate = P.promisify(kbpgp.KeyManager.generate)
+
+module.exports = async function generate (userid, passphrase) {
   try {
-    const keyManager = await importFromArmoredPgp({armored: publicKey})
+    const asp = new kbpgp.ASP({
+      progress_hook: (o) => {
+        console.log('Progress: ', o)
+      }
+    })
+    const opts = (userid) => ({
+      asp: asp,
+      userid: userid,
+      primary: {
+        nbits: 4096,
+        flags: F.certify_keys | F.sign_data | F.auth | F.encrypt_comm | F.encrypt_storage,
+        expire_in: 0
+      },
+      subkeys: [
+        {
+          nbits: 2048,
+          flags: F.encrypt_comm | F.encrypt_storage,
+          expire: 86400 * 365 * 8
+        }
+      ]
+    })
+
+    const keyManager = await keyManagerGenerate(opts(userid))
         .then((keyManager) => keyManager)
 
-    const encryptedMessage = await box({ encrypt_for: keyManager, msg: message })
-        .then((encrypted) => encrypted)
-
-    return Promise.resolve(encryptedMessage)
+    return new Promise(function (resolve, reject) {
+      keyManager.sign({}, (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          keyManager.export_pgp_private({
+            passphrase: passphrase
+          }, (err, privateKey) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(privateKey)
+            }
+          })
+        }
+      })
+    })
   } catch (err) {
     return Promise.reject(err)
   }

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "standard && jest",
     "compile": "rimraf lib/ && babel -d lib/ src/",
-    "prepublish": "npm run compile"
+    "prepublish": "npm run compile",
+    "fix": "standard --fix"
   },
   "repository": {
     "type": "git",
