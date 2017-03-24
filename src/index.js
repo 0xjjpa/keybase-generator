@@ -23,8 +23,13 @@ module.exports = async function generate (userid, passphrase) {
       subkeys: [
         {
           nbits: 2048,
-          flags: F.encrypt_comm | F.encrypt_storage,
+          flags: F.sign_data,
           expire: 86400 * 365 * 8
+        },
+        {
+          nbits: 2048,
+          flags: F.encrypt_comm | F.encrypt_storage,
+          expire: 86400 * 365 * 2
         }
       ]
     })
@@ -43,7 +48,13 @@ module.exports = async function generate (userid, passphrase) {
             if (err) {
               reject(err)
             } else {
-              resolve(privateKey)
+              keyManager.export_pgp_public({}, (err, publicKey) => {
+                if (err) {
+                  reject(err)
+                } else {
+                  resolve({privateKey: privateKey, publicKey: publicKey})
+                }
+              })
             }
           })
         }

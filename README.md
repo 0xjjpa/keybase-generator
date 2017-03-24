@@ -13,7 +13,21 @@ $ npm install keybase-generator --save
 ## Usage
 
 ```js
-...
+const generator = require('keybase-generator')
+
+try {
+
+  const password = 'password'
+  const userId = 'Jose Aguinaga <me@jjperezaguinaga.com>'
+
+  generator(userid, password).then((keypair) => {
+    console.log('Private Key', keypair.privateKey)
+    console.log('Public Key', keypair.publicKey)
+  })
+  
+} catch(err) {
+  console.log('There was an error generating the keys', err)
+}
 ```
 
 ## Related
